@@ -1,0 +1,18 @@
+language: elixir
+
+elixir:
+  - 1.9
+
+otp_release:
+  - 22.0
+
+script:
+  - mix format --check-formatted
+  - mix test
+  - mix dialyzer
+
+cache:
+  directories:
+    - priv/plts
+
+sudo: false
