@@ -11,7 +11,8 @@ defmodule DsWrapper.MixProject do
       elixir: "~> 1.9",
       deps: deps(),
       package: package(),
-      source_url: "https://github.com/iii-ishida/ds_wrapper"
+      source_url: "https://github.com/iii-ishida/ds_wrapper",
+      dialyzer: [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}]
     ]
   end
 
