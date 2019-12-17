@@ -13,7 +13,7 @@ defmodule DsWrapper.MixProject do
       package: package(),
       source_url: "https://github.com/iii-ishida/ds_wrapper",
       dialyzer: [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}],
-      elixirc_paths: elixirc_paths(Mix.env)
+      elixirc_paths: elixirc_paths(Mix.env())
     ]
   end
 
@@ -38,7 +38,7 @@ defmodule DsWrapper.MixProject do
   end
 
   defp elixirc_paths(:test), do: ["test/support", "lib"]
-  defp elixirc_paths(_),     do: ["lib"]
+  defp elixirc_paths(_), do: ["lib"]
 
   defp package do
     %{
