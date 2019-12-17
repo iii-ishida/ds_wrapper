@@ -2,8 +2,8 @@ defmodule DsWrapper.DatastoreTest do
   use ExUnit.Case, async: true
   import Mox
 
-  alias DsWrapper.GoogleApiProjectsMock
   alias DsWrapper.Datastore
+  alias DsWrapper.GoogleApiProjectsMock
 
   alias GoogleApi.Datastore.V1.Model.{
     Entity,
