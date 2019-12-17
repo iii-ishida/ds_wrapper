@@ -2,7 +2,7 @@ defmodule DsWrapper.KeyTest do
   use ExUnit.Case, async: true
   doctest DsWrapper.Key
 
-  alias GoogleApi.Datastore.V1.Model.{ArrayValue, Entity, Key, LatLng, PathElement, Value}
+  alias GoogleApi.Datastore.V1.Model.{Key, PathElement}
 
   describe "new/3" do
     test "without parent or name" do
