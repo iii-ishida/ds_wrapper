@@ -12,12 +12,26 @@ defmodule DsWrapper.Connection do
   @doc """
   configure a client connection.
   """
+  def new(token, project_id) do
+    %__MODULE__{connection: Connection.new(token), project_id: project_id}
+  end
+
+  @doc """
+  configure a client connection.
+  """
   def new(project_id) do
     case @token.for_scope("https://www.googleapis.com/auth/datastore") do
-      {:ok, token} -> {:ok, %__MODULE__{connection: Connection.new(token.token), project_id: project_id}}
+      {:ok, token} -> {:ok, new(token.token, project_id)}
       error -> error
     end
   end
+
+  @doc """
+  configure a client connection.
+
+  use GOOGLE_CLOUD_PROJECT as the project_id
+  """
+  def new, do: new(System.get_env("GOOGLE_CLOUD_PROJECT"))
 end
 
 defmodule DsWrapper.Token do
