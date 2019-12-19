@@ -30,10 +30,17 @@ defmodule DsWrapper.ValueTest do
       assert DsWrapper.Value.from_native(%{latitude: 123, longitude: 456}, true) == %Value{geoPointValue: %LatLng{latitude: 123, longitude: 456}, excludeFromIndexes: true}
     end
 
+    test "keyValue" do
+      key = %Key{path: [%PathElement{kind: "SomeKind", name: "some-name"}]}
+
+      assert DsWrapper.Value.from_native(key) == %Value{keyValue: key}
+      assert DsWrapper.Value.from_native(key, true) == %Value{keyValue: key, excludeFromIndexes: true}
+    end
+
     test "entityValue" do
       entity = %Entity{
-        key: %Key{path: [%PathElement{kind: "some_kind", name: "some-name"}]},
-        properties: %{"some-property" => %Value{stringValue: "some value"}}
+        key: %Key{path: [%PathElement{kind: "SomeKind", name: "some-name"}]},
+        properties: %{"some_property" => %Value{stringValue: "some value"}}
       }
 
       assert DsWrapper.Value.from_native(entity) == %Value{entityValue: entity}
@@ -71,13 +78,19 @@ defmodule DsWrapper.ValueTest do
       assert DsWrapper.Value.to_native(%Value{geoPointValue: %LatLng{latitude: 123, longitude: 456}}) == %{latitude: 123, longitude: 456}
     end
 
+    test "keyValue" do
+      key = %Key{path: [%PathElement{kind: "SomeKind", name: "some-name"}]}
+
+      assert DsWrapper.Value.to_native(%Value{keyValue: key}) == key
+    end
+
     test "entityValue" do
       entity = %Entity{
-        key: %Key{path: [%PathElement{kind: "some_kind", name: "some-name"}]},
-        properties: %{"some-property" => %Value{stringValue: "some value"}}
+        key: %Key{path: [%PathElement{kind: "SomeKind", name: "some-name"}]},
+        properties: %{"some_property" => %Value{stringValue: "some value"}}
       }
 
-      assert DsWrapper.Value.to_native(%Value{entityValue: entity}) == %{"some-property" => "some value"}
+      assert DsWrapper.Value.to_native(%Value{entityValue: entity}) == %{"some_property" => "some value"}
     end
 
     test "arrayValue" do

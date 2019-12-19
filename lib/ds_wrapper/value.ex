@@ -3,7 +3,7 @@ defmodule DsWrapper.Value do
   A wrapper for GoogleApi.Datastore.V1.Model.Value
   """
 
-  alias GoogleApi.Datastore.V1.Model.{ArrayValue, Entity, LatLng, Value}
+  alias GoogleApi.Datastore.V1.Model.{ArrayValue, Entity, Key, LatLng, Value}
 
   @doc """
   convert to a `GoogleApi.Datastore.V1.Model.Value`
@@ -46,6 +46,10 @@ defmodule DsWrapper.Value do
 
   def from_native(%{latitude: lat, longitude: lon}, exclude_from_index) do
     %Value{geoPointValue: %LatLng{latitude: lat, longitude: lon}, excludeFromIndexes: exclude_from_index}
+  end
+
+  def from_native(%Key{} = value, exclude_from_index) do
+    %Value{keyValue: value, excludeFromIndexes: exclude_from_index}
   end
 
   def from_native(%Entity{} = value, exclude_from_index) do
