@@ -9,6 +9,8 @@ defmodule DsWrapper.DatastoreTest do
     Entity,
     EntityResult,
     Key,
+    LookupRequest,
+    LookupResponse,
     PathElement,
     QueryResultBatch,
     ReadOptions,
@@ -41,6 +43,59 @@ defmodule DsWrapper.DatastoreTest do
     end)
 
     entities = [DsWrapper.Entity.to_map(@entity)]
-    assert {:ok, %{cursor: "end-cursor", entities: entities}} == Datastore.run_query(@conn, query)
+    assert Datastore.run_query(@conn, query) == {:ok, %{cursor: "end-cursor", entities: entities}}
+  end
+
+  describe "find/2" do
+    test "when found" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_lookup, fn _, _, [body: body] ->
+        assert body == %LookupRequest{keys: [@key], readOptions: %ReadOptions{}}
+
+        {:ok, %LookupResponse{found: [@entity]}}
+      end)
+
+      assert Datastore.find(@conn, @key) == {:ok, DsWrapper.Entity.to_map(@entity)}
+    end
+
+    test "when not found" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_lookup, fn _, _, _ ->
+        {:ok, %LookupResponse{missing: [%EntityResult{entity: @entity}]}}
+      end)
+
+      assert Datastore.find(@conn, @key) == {:ok, nil}
+    end
+  end
+
+  describe "find_all/2" do
+    test "when found" do
+      another_key = %Key{path: [%PathElement{kind: @kind, name: "another-name"}]}
+      another_entity = %Entity{key: another_key, properties: %{@property_name => %Value{stringValue: "another value"}}}
+      keys = [@key, another_key]
+      entities = [@entity, another_entity]
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_lookup, fn _, _, [body: body] ->
+        assert body == %LookupRequest{keys: keys, readOptions: %ReadOptions{}}
+
+        {:ok, %LookupResponse{found: entities}}
+      end)
+
+      assert Datastore.find_all(@conn, keys) == {:ok, %{found: Enum.map(entities, &DsWrapper.Entity.to_map/1), missing: nil, deferred: nil}}
+    end
+
+    test "when not found" do
+      another_key = %Key{path: [%PathElement{kind: @kind, name: "another-name"}]}
+      another_entity = %Entity{key: another_key, properties: %{@property_name => %Value{stringValue: "another value"}}}
+      keys = [@key, another_key]
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_lookup, fn _, _, _ ->
+        {:ok, %LookupResponse{missing: [%EntityResult{entity: @entity}, %EntityResult{entity: another_entity}]}}
+      end)
+
+      assert Datastore.find_all(@conn, keys) == {:ok, %{found: nil, missing: keys, deferred: nil}}
+    end
   end
 end
