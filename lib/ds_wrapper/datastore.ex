@@ -17,13 +17,13 @@ defmodule DsWrapper.Datastore do
   @doc """
   retrieve entities specified by a Query.
 
-    ## Examples
+  ## Examples
 
-        iex> import DsWrapper.Query
-        ...> {:ok, connection} = DsWrapper.Connection.new("project-id")
-        ...> query = new_query("SomeKind") |> where("some_property", "=", "some value")
-        ...> DsWrapper.Datastore.run_query(connection, query)
-        {:ok, %{cursor: ..., entities: [%{...}]}}
+      iex> import DsWrapper.Query
+      ...> {:ok, connection} = DsWrapper.Connection.new("project-id")
+      ...> query = new_query("SomeKind") |> where("some_property", "=", "some value")
+      ...> DsWrapper.Datastore.run_query(connection, query)
+      {:ok, %{cursor: ..., entities: [%{...}]}}
   """
   def run_query(connection, %Query{} = query) do
     req = %RunQueryRequest{query: query, readOptions: %ReadOptions{}}
@@ -39,13 +39,13 @@ defmodule DsWrapper.Datastore do
   @doc """
   retrieve an entity by key.
 
-    ## Examples
+  ## Examples
 
-        iex> import DsWrapper.Query
-        ...> {:ok, connection} = DsWrapper.Connection.new("project-id")
-        ...> key = DsWrapper.Key.new("SomeKind", "some-name")
-        ...> DsWrapper.Datastore.find(connection, key)
-        {:ok, %{...}}
+      iex> import DsWrapper.Query
+      ...> {:ok, connection} = DsWrapper.Connection.new("project-id")
+      ...> key = DsWrapper.Key.new("SomeKind", "some-name")
+      ...> DsWrapper.Datastore.find(connection, key)
+      {:ok, %{...}}
   """
   def find(connection, key) do
     with {:ok, %{found: found}} <- lookup(connection, [key]) do
@@ -61,13 +61,13 @@ defmodule DsWrapper.Datastore do
   @doc """
   retrieve the entities for the provided keys. The order of results is undefined and has no relation to the order of keys arguments.
 
-    ## Examples
+  ## Examples
 
-        iex> import DsWrapper.Query
-        ...> {:ok, connection} = DsWrapper.Connection.new("project-id")
-        ...> keys = [DsWrapper.Key.new("SomeKind", "some-name-01"), ...]
-        ...> DsWrapper.Datastore.find_all(connection, keys)
-        {:ok, %{found: [%{...}, ...], missing: [%Key{...}, ...], deferred: [%Key{...}, ...]}}
+      iex> import DsWrapper.Query
+      ...> {:ok, connection} = DsWrapper.Connection.new("project-id")
+      ...> keys = [DsWrapper.Key.new("SomeKind", "some-name-01"), ...]
+      ...> DsWrapper.Datastore.find_all(connection, keys)
+      {:ok, %{found: [%{...}, ...], missing: [%Key{...}, ...], deferred: [%Key{...}, ...]}}
   """
   def find_all(connection, keys) do
     with {:ok, result} <- lookup(connection, keys) do
