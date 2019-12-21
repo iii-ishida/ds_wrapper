@@ -15,8 +15,17 @@ defmodule DsWrapper.Key do
 
       iex> DsWrapper.Key.new("SomeKind", "some-name")
       %GoogleApi.Datastore.V1.Model.Key{path: [%GoogleApi.Datastore.V1.Model.PathElement{kind: "SomeKind", name: "some-name"}]}
+
+      iex> DsWrapper.Key.new("SomeKind", 1234)
+      %GoogleApi.Datastore.V1.Model.Key{path: [%GoogleApi.Datastore.V1.Model.PathElement{kind: "SomeKind", id: "1234"}]}
   """
-  def new(kind, name \\ nil, parent \\ %Key{path: []}) do
+  def new(kind, id_or_name \\ nil, parent \\ %Key{path: []})
+
+  def new(kind, id, parent) when is_integer(id) do
+    %Key{path: parent.path ++ [%PathElement{kind: kind, id: Integer.to_string(id)}]}
+  end
+
+  def new(kind, name, parent) do
     %Key{path: parent.path ++ [%PathElement{kind: kind, name: name}]}
   end
 end
