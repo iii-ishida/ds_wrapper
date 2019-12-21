@@ -15,7 +15,6 @@ defmodule DsWrapper.Value do
 
       iex> DsWrapper.Value.from_native(123, true)
       %GoogleApi.Datastore.V1.Model.Value{integerValue: "123", excludeFromIndexes: true}
-
   """
   def from_native(value, exclude_from_index \\ nil)
 
@@ -67,7 +66,6 @@ defmodule DsWrapper.Value do
 
       iex> DsWrapper.Value.to_native(%GoogleApi.Datastore.V1.Model.Value{integerValue: "123"})
       123
-
   """
   def to_native(%Value{integerValue: value}) when not is_nil(value) do
     value |> Integer.parse() |> elem(0)
@@ -88,7 +86,8 @@ defmodule DsWrapper.Value do
   end
 
   def to_native(%Value{} = value) do
-    not_nil_value = Map.from_struct(value) |> Enum.find(fn {_, v} -> v != nil end)
+    not_nil_value = Map.from_struct(value)
+                    |> Enum.find(fn {k, v} -> k != :excludeFromIndexes && v != nil end)
 
     case not_nil_value do
       {_, v} -> v
