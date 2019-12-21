@@ -86,8 +86,9 @@ defmodule DsWrapper.Value do
   end
 
   def to_native(%Value{} = value) do
-    not_nil_value = Map.from_struct(value)
-                    |> Enum.find(fn {k, v} -> k != :excludeFromIndexes && v != nil end)
+    not_nil_value =
+      Map.from_struct(value)
+      |> Enum.find(fn {k, v} -> k != :excludeFromIndexes && v != nil end)
 
     case not_nil_value do
       {_, v} -> v
