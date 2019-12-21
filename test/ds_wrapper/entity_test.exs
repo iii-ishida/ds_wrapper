@@ -24,6 +24,13 @@ defmodule DsWrapper.EntityTest do
                }
              }
     end
+
+    test "key can be nil" do
+      assert DsWrapper.Entity.new(nil, %{"some_property" => "some value"}) == %Entity{
+               key: nil,
+               properties: %{"some_property" => %Value{stringValue: "some value", excludeFromIndexes: false}}
+             }
+    end
   end
 
   describe "to_map/1" do
