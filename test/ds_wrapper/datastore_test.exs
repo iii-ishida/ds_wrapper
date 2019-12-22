@@ -28,30 +28,52 @@ defmodule DsWrapper.DatastoreTest do
   @property_value "some value"
   @entity %Entity{key: @key, properties: %{@property_name => %Value{stringValue: @property_value}}}
 
-  test "run_query/1" do
-    query = Datastore.query("SomeKind")
+  describe "run_query/1" do
+    test "call datastore_projects_run_query" do
+      query = Datastore.query("SomeKind")
 
-    GoogleApiProjectsMock
-    |> expect(:datastore_projects_run_query, fn _, _, [body: body] ->
-      assert body == %RunQueryRequest{query: query, readOptions: %ReadOptions{}}
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_run_query, fn _, _, [body: body] ->
+        assert body == %RunQueryRequest{query: query, readOptions: %ReadOptions{}}
 
-      {:ok,
-       %RunQueryResponse{
-         batch: %QueryResultBatch{endCursor: "end-cursor", entityResults: [%EntityResult{cursor: "end-cursor", entity: @entity}]},
-         query: query
-       }}
-    end)
+        {:ok, %RunQueryResponse{batch: %QueryResultBatch{}}}
+      end)
 
-    entities = [DsWrapper.Entity.to_map(@entity)]
-    assert Datastore.run_query(@conn, query) == {:ok, %{cursor: "end-cursor", entities: entities}}
+      Datastore.run_query(@conn, query)
+    end
+
+    test "return a cursor and entities" do
+      query = Datastore.query("SomeKind")
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_run_query, fn _, _, _ ->
+        {:ok,
+         %RunQueryResponse{
+           batch: %QueryResultBatch{endCursor: "end-cursor", entityResults: [%EntityResult{cursor: "end-cursor", entity: @entity}]},
+           query: query
+         }}
+      end)
+
+      entities = [DsWrapper.Entity.to_map(@entity)]
+      assert Datastore.run_query(@conn, query) == {:ok, %{cursor: "end-cursor", entities: entities}}
+    end
   end
 
   describe "find/2" do
-    test "when found" do
+    test "call datastore_projects_lookup" do
       GoogleApiProjectsMock
       |> expect(:datastore_projects_lookup, fn _, _, [body: body] ->
         assert body == %LookupRequest{keys: [@key], readOptions: %ReadOptions{}}
 
+        {:ok, %LookupResponse{}}
+      end)
+
+      Datastore.find(@conn, @key)
+    end
+
+    test "when found" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_lookup, fn _, _, _ ->
         {:ok, %LookupResponse{found: [@entity]}}
       end)
 
@@ -69,6 +91,20 @@ defmodule DsWrapper.DatastoreTest do
   end
 
   describe "find_all/2" do
+    test "call datastore_projects_lookup" do
+      another_key = %Key{path: [%PathElement{kind: @kind, name: "another-name"}]}
+      keys = [@key, another_key]
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_lookup, fn _, _, [body: body] ->
+        assert body == %LookupRequest{keys: keys, readOptions: %ReadOptions{}}
+
+        {:ok, %LookupResponse{}}
+      end)
+
+      Datastore.find_all(@conn, keys)
+    end
+
     test "when found" do
       another_key = %Key{path: [%PathElement{kind: @kind, name: "another-name"}]}
       another_entity = %Entity{key: another_key, properties: %{@property_name => %Value{stringValue: "another value"}}}
@@ -76,9 +112,7 @@ defmodule DsWrapper.DatastoreTest do
       entities = [@entity, another_entity]
 
       GoogleApiProjectsMock
-      |> expect(:datastore_projects_lookup, fn _, _, [body: body] ->
-        assert body == %LookupRequest{keys: keys, readOptions: %ReadOptions{}}
-
+      |> expect(:datastore_projects_lookup, fn _, _, _ ->
         {:ok, %LookupResponse{found: entities}}
       end)
 
