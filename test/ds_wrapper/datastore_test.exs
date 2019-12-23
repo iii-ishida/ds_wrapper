@@ -6,11 +6,15 @@ defmodule DsWrapper.DatastoreTest do
   alias DsWrapper.GoogleApiProjectsMock
 
   alias GoogleApi.Datastore.V1.Model.{
+    CommitRequest,
+    CommitResponse,
     Entity,
     EntityResult,
     Key,
     LookupRequest,
     LookupResponse,
+    Mutation,
+    MutationResult,
     PathElement,
     QueryResultBatch,
     ReadOptions,
@@ -130,6 +134,115 @@ defmodule DsWrapper.DatastoreTest do
       end)
 
       assert Datastore.find_all(@conn, keys) == {:ok, %{found: nil, missing: keys, deferred: nil}}
+    end
+  end
+
+  describe "insert/2" do
+    test "call datastore_projects_commit" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, [body: body] ->
+        assert body == %CommitRequest{
+                 mode: "NON_TRANSACTIONAL",
+                 mutations: [%Mutation{insert: @entity}]
+               }
+
+        {:ok, %CommitResponse{mutationResults: []}}
+      end)
+
+      Datastore.insert(@conn, @entity)
+    end
+
+    test "returns keys for entities" do
+      another_key = %Key{path: [%PathElement{kind: @kind, id: "1234"}]}
+      another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:ok, %CommitResponse{mutationResults: [%MutationResult{key: nil}, %MutationResult{key: another_key}]}}
+      end)
+
+      assert Datastore.insert(@conn, [@entity, another_entity]) == {:ok, [@key, another_key]}
+    end
+  end
+
+  describe "upsert/2" do
+    test "call datastore_projects_commit" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, [body: body] ->
+        assert body == %CommitRequest{
+                 mode: "NON_TRANSACTIONAL",
+                 mutations: [%Mutation{upsert: @entity}]
+               }
+
+        {:ok, %CommitResponse{mutationResults: []}}
+      end)
+
+      Datastore.upsert(@conn, @entity)
+    end
+
+    test "returns keys for entities" do
+      another_key = %Key{path: [%PathElement{kind: @kind, id: "1234"}]}
+      another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:ok, %CommitResponse{mutationResults: [%MutationResult{key: nil}, %MutationResult{key: another_key}]}}
+      end)
+
+      assert Datastore.upsert(@conn, [@entity, another_entity]) == {:ok, [@key, another_key]}
+    end
+  end
+
+  describe "update/2" do
+    test "call datastore_projects_commit" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, [body: body] ->
+        assert body == %CommitRequest{
+                 mode: "NON_TRANSACTIONAL",
+                 mutations: [%Mutation{update: @entity}]
+               }
+
+        {:ok, %CommitResponse{mutationResults: []}}
+      end)
+
+      Datastore.update(@conn, @entity)
+    end
+
+    test "returns keys for entities" do
+      another_key = %Key{path: [%PathElement{kind: @kind, id: "1234"}]}
+      another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:ok, %CommitResponse{mutationResults: [%MutationResult{key: nil}, %MutationResult{key: another_key}]}}
+      end)
+
+      assert Datastore.update(@conn, [@entity, another_entity]) == {:ok, [@key, another_key]}
+    end
+  end
+
+  describe "delete/2" do
+    test "call datastore_projects_commit" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, [body: body] ->
+        assert body == %CommitRequest{
+                 mode: "NON_TRANSACTIONAL",
+                 mutations: [%Mutation{delete: @key}]
+               }
+
+        {:ok, %CommitResponse{mutationResults: []}}
+      end)
+
+      Datastore.delete(@conn, @key)
+    end
+
+    test "returns :ok" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:ok, %CommitResponse{mutationResults: [%MutationResult{key: nil}]}}
+      end)
+
+      assert Datastore.delete(@conn, @key) == :ok
     end
   end
 end

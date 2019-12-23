@@ -4,6 +4,7 @@ defmodule DsWrapper.Datastore do
   """
 
   alias GoogleApi.Datastore.V1.Model.{
+    CommitRequest,
     LookupRequest,
     Query,
     ReadOptions,
@@ -80,6 +81,83 @@ defmodule DsWrapper.Datastore do
     end
   end
 
+  @doc """
+  insert one or more entities to the Datastore.
+
+  ## Examples
+
+      iex> {:ok, connection} = DsWrapper.Connection.new("project-id")
+      ...> entity = DsWrapper.Entity.new(key, properties)
+      ...> DsWrapper.Datastore.insert(connection, entity)
+      {:ok, [%Key{...}]}
+  """
+  def insert(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_insert/1, entities)
+
+  @doc """
+  persist one or more entities to the Datastore.
+
+  ## Examples
+
+      iex> {:ok, connection} = DsWrapper.Connection.new("project-id")
+      ...> entity = DsWrapper.Entity.new(key, properties)
+      ...> DsWrapper.Datastore.upsert(connection, entity)
+      {:ok, [%Key{...}]}
+  """
+  def upsert(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_upsert/1, entities)
+
+  @doc """
+  update one or more entities to the Datastore.
+
+  ## Examples
+
+      iex> {:ok, connection} = DsWrapper.Connection.new("project-id")
+      ...> entity = DsWrapper.Entity.new(key, properties)
+      ...> DsWrapper.Datastore.update(connection, entity)
+      {:ok, [%Key{...}]}
+  """
+  def update(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_update/1, entities)
+
+  @doc """
+  remove entities from the Datastore.
+
+  ## Examples
+
+      iex> {:ok, connection} = DsWrapper.Connection.new("project-id")
+      ...> key = DsWrapper.Key.new("SomeKind", "some-name")
+      ...> DsWrapper.Datastore.delete(connection, key)
+      :ok
+  """
+  def delete(connection, keys) do
+    with {:ok, _} <- do_command(connection, &DsWrapper.Mutation.for_delete/1, keys) do
+      :ok
+    end
+  end
+
+  def commit(connection, mutations) do
+    req = %CommitRequest{
+      mode: "NON_TRANSACTIONAL",
+      mutations: mutations
+    }
+
+    call_datastore_api(connection, &@google_api_projects.datastore_projects_commit/3, body: req)
+  end
+
+  defp do_command(connection, create_mutations_function, entities_or_keys) when is_list(entities_or_keys) do
+    with {:ok, response} <- commit(connection, create_mutations_function.(entities_or_keys)) do
+      {:ok, keys_from_commit_response(response, entities_or_keys)}
+    end
+  end
+
+  defp do_command(connection, create_mutations_function, entity_or_key) do
+    do_command(connection, create_mutations_function, [entity_or_key])
+  end
+
+  defp keys_from_commit_response(%{mutationResults: mutation_results}, entities_for_default) do
+    mutation_results
+    |> Enum.with_index()
+    |> Enum.map(fn {result, i} -> result.key || Enum.at(entities_for_default, i) |> Map.get(:key) end)
+  end
+
   defp lookup(connection, keys) do
     req = %LookupRequest{
       keys: keys,
@@ -103,4 +181,5 @@ defmodule DsWrapper.GoogleApiProjects do
 
   @callback datastore_projects_run_query(Tesla.Env.client(), String.t(), keyword) :: {:ok, GoogleApi.Datastore.V1.Model.RunQueryResponse.t()} | {:error, Tesla.Env.t()}
   @callback datastore_projects_lookup(Tesla.Env.client(), String.t(), keyword) :: {:ok, GoogleApi.Datastore.V1.Model.LookupResponse.t()} | {:error, Tesla.Env.t()}
+  @callback datastore_projects_commit(Tesla.Env.client(), String.t(), keyword) :: {:ok, GoogleApi.Datastore.V1.Model.CommitResponse.t()} | {:error, Tesla.Env.t()}
 end
