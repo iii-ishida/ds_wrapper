@@ -5,7 +5,7 @@ defmodule DsWrapper.Connection do
 
   alias GoogleApi.Datastore.V1.Connection
 
-  defstruct [:connection, :project_id]
+  defstruct [:connection, :project_id, :transaction_id, :mutation_store_pid]
 
   @token Application.get_env(:ds_wrapper, :token_for_connection, Goth.Token)
 

@@ -4,11 +4,16 @@ defmodule DsWrapper.Datastore do
   """
 
   alias GoogleApi.Datastore.V1.Model.{
+    BeginTransactionRequest,
     CommitRequest,
     LookupRequest,
     Query,
+    ReadOnly,
     ReadOptions,
-    RunQueryRequest
+    ReadWrite,
+    RollbackRequest,
+    RunQueryRequest,
+    TransactionOptions
   }
 
   @google_api_projects Application.get_env(:ds_wrapper, :google_api_projects, GoogleApi.Datastore.V1.Api.Projects)
@@ -27,7 +32,7 @@ defmodule DsWrapper.Datastore do
       {:ok, %{cursor: ..., entities: [%{...}]}}
   """
   def run_query(connection, %Query{} = query) do
-    req = %RunQueryRequest{query: query, readOptions: %ReadOptions{}}
+    req = %RunQueryRequest{query: query, readOptions: %ReadOptions{transaction: connection.transaction_id}}
 
     with {:ok, result} <- call_datastore_api(connection, &@google_api_projects.datastore_projects_run_query/3, body: req) do
       cursor = result.batch.endCursor
@@ -133,7 +138,85 @@ defmodule DsWrapper.Datastore do
     end
   end
 
-  def commit(connection, mutations) do
+  @doc """
+  creates a Datastore Transaction.
+
+  ## Examples
+
+      iex> {:ok, connection} = DsWrapper.Connection.new("project-id")
+      ...> DsWrapper.transaction(conn)
+      {:ok, %DsWrapper.Connection{connection: ..., project_id: ..., transaction_id: ..., mutation_store_pid: ...}}
+  """
+  def transaction(connection, read_only \\ nil) do
+    with {:ok, %{transaction: tx_id}} <- begin_transaction(connection, read_only == :read_only),
+         {:ok, pid} <- DsWrapper.MutationStore.start_link() do
+      {:ok, %DsWrapper.Connection{connection | transaction_id: tx_id, mutation_store_pid: pid}}
+    end
+  end
+
+  @doc """
+  commit a transaction.
+
+  ## Examples
+
+      iex> {:ok, connection} = DsWrapper.Connection.new("project-id")
+      ...> {:ok, tx} = DsWrapper.transaction(conn)
+      ...> DsWrapper.Datastore.insert(tx, entity_a)
+      ...> DsWrapper.Datastore.update(tx, entity_b)
+      ...> DsWrapper.Datastore.commit(tx)
+      {:ok, %CommitResponse{...}}
+  """
+  def commit(tx_connection) do
+    req = %CommitRequest{
+      mode: "TRANSACTIONAL",
+      mutations: DsWrapper.MutationStore.get_all(tx_connection.mutation_store_pid),
+      transaction: tx_connection.transaction_id
+    }
+
+    DsWrapper.MutationStore.stop(tx_connection.mutation_store_pid)
+
+    call_datastore_api(tx_connection, &@google_api_projects.datastore_projects_commit/3, body: req)
+  end
+
+  @doc """
+  rolls a transaction back.
+
+  ## Examples
+
+      iex> {:ok, connection} = DsWrapper.Connection.new("project-id")
+      ...> {:ok, tx} = DsWrapper.transaction(conn)
+      ...> DsWrapper.Datastore.insert(tx, entity_a)
+      ...> DsWrapper.Datastore.update(tx, entity_b)
+      ...> DsWrapper.Datastore.rollback(tx)
+      :ok
+  """
+  def rollback(connection) do
+    req = %RollbackRequest{transaction: connection.transaction_id}
+
+    DsWrapper.MutationStore.stop(connection.mutation_store_pid)
+
+    with {:ok, _} <- call_datastore_api(connection, &@google_api_projects.datastore_projects_rollback/3, body: req) do
+      :ok
+    end
+  end
+
+  defp do_command(connection, create_mutations_function, entity_or_key) when not is_list(entity_or_key) do
+    do_command(connection, create_mutations_function, [entity_or_key])
+  end
+
+  defp do_command(%{transaction_id: tx_id} = connection, create_mutations_function, entities_or_keys) when is_nil(tx_id) do
+    with {:ok, response} <- commit(connection, create_mutations_function.(entities_or_keys)) do
+      {:ok, keys_from_commit_response(response, entities_or_keys)}
+    end
+  end
+
+  # for transaction
+  defp do_command(%{mutation_store_pid: pid}, create_mutations_function, entities_or_keys) do
+    DsWrapper.MutationStore.put(pid, create_mutations_function.(entities_or_keys))
+    {:ok, nil}
+  end
+
+  defp commit(%{transaction_id: tx_id} = connection = connection, mutations) when is_nil(tx_id) do
     req = %CommitRequest{
       mode: "NON_TRANSACTIONAL",
       mutations: mutations
@@ -142,26 +225,31 @@ defmodule DsWrapper.Datastore do
     call_datastore_api(connection, &@google_api_projects.datastore_projects_commit/3, body: req)
   end
 
-  defp do_command(connection, create_mutations_function, entities_or_keys) when is_list(entities_or_keys) do
-    with {:ok, response} <- commit(connection, create_mutations_function.(entities_or_keys)) do
-      {:ok, keys_from_commit_response(response, entities_or_keys)}
-    end
-  end
-
-  defp do_command(connection, create_mutations_function, entity_or_key) do
-    do_command(connection, create_mutations_function, [entity_or_key])
-  end
-
   defp keys_from_commit_response(%{mutationResults: mutation_results}, entities_for_default) do
     mutation_results
     |> Enum.with_index()
     |> Enum.map(fn {result, i} -> result.key || Enum.at(entities_for_default, i) |> Map.get(:key) end)
   end
 
+  defp begin_transaction(connection, read_only?) do
+    options =
+      if read_only? do
+        %TransactionOptions{readOnly: %ReadOnly{}}
+      else
+        %TransactionOptions{readWrite: %ReadWrite{}}
+      end
+
+    req = %BeginTransactionRequest{
+      transactionOptions: options
+    }
+
+    call_datastore_api(connection, &@google_api_projects.datastore_projects_begin_transaction/3, body: req)
+  end
+
   defp lookup(connection, keys) do
     req = %LookupRequest{
       keys: keys,
-      readOptions: %ReadOptions{}
+      readOptions: %ReadOptions{transaction: connection.transaction_id}
     }
 
     call_datastore_api(connection, &@google_api_projects.datastore_projects_lookup/3, body: req)
@@ -182,4 +270,6 @@ defmodule DsWrapper.GoogleApiProjects do
   @callback datastore_projects_run_query(Tesla.Env.client(), String.t(), keyword) :: {:ok, GoogleApi.Datastore.V1.Model.RunQueryResponse.t()} | {:error, Tesla.Env.t()}
   @callback datastore_projects_lookup(Tesla.Env.client(), String.t(), keyword) :: {:ok, GoogleApi.Datastore.V1.Model.LookupResponse.t()} | {:error, Tesla.Env.t()}
   @callback datastore_projects_commit(Tesla.Env.client(), String.t(), keyword) :: {:ok, GoogleApi.Datastore.V1.Model.CommitResponse.t()} | {:error, Tesla.Env.t()}
+  @callback datastore_projects_begin_transaction(Tesla.Env.client(), String.t(), keyword) :: {:ok, GoogleApi.Datastore.V1.Model.BeginTransactionResponse.t()} | {:error, Tesla.Env.t()}
+  @callback datastore_projects_rollback(Tesla.Env.client(), String.t(), keyword) :: {:ok, GoogleApi.Datastore.V1.Model.RollbackResponse.t()} | {:error, Tesla.Env.t()}
 end
