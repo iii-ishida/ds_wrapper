@@ -73,7 +73,7 @@ defmodule DsWrapper.DatastoreTest do
       Datastore.run_query(tx_conn, query)
     end
 
-    test "return a cursor and entities" do
+    test "returns a cursor and entities" do
       query = Datastore.query("SomeKind")
 
       GoogleApiProjectsMock
@@ -87,6 +87,35 @@ defmodule DsWrapper.DatastoreTest do
 
       entities = [DsWrapper.Entity.to_map(@entity)]
       assert Datastore.run_query(@conn, query) == {:ok, %{cursor: "end-cursor", entities: entities}}
+    end
+  end
+
+  describe "run_query!/1" do
+    test "returns the result when run_query/1 returns {:ok, result}" do
+      query = Datastore.query("SomeKind")
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_run_query, fn _, _, _ ->
+        {:ok,
+         %RunQueryResponse{
+           batch: %QueryResultBatch{endCursor: "end-cursor", entityResults: [%EntityResult{cursor: "end-cursor", entity: @entity}]},
+           query: query
+         }}
+      end)
+
+      entities = [DsWrapper.Entity.to_map(@entity)]
+      assert Datastore.run_query!(@conn, query) == %{cursor: "end-cursor", entities: entities}
+    end
+
+    test "raises an exception when run_query/1 returns {:error, reason}" do
+      query = Datastore.query("SomeKind")
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_run_query, fn _, _, _ ->
+        {:error, "some error"}
+      end)
+
+      assert_raise RuntimeError, fn -> Datastore.run_query!(@conn, query) end
     end
   end
 
@@ -129,6 +158,26 @@ defmodule DsWrapper.DatastoreTest do
       end)
 
       assert Datastore.find(@conn, @key) == {:ok, nil}
+    end
+  end
+
+  describe "find!/2" do
+    test "returns the result when find/2 returns {:ok, result}" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_lookup, fn _, _, _ ->
+        {:ok, %LookupResponse{found: [@entity]}}
+      end)
+
+      assert Datastore.find!(@conn, @key) == DsWrapper.Entity.to_map(@entity)
+    end
+
+    test "raises an exception when find/2 returns {:error, reason}" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_lookup, fn _, _, _ ->
+        {:error, "some error"}
+      end)
+
+      assert_raise RuntimeError, fn -> Datastore.find!(@conn, @key) end
     end
   end
 
@@ -189,6 +238,31 @@ defmodule DsWrapper.DatastoreTest do
     end
   end
 
+  describe "find_all!/2" do
+    test "returns the result when find_all/2 returns {:ok, result}" do
+      another_key = %Key{path: [%PathElement{kind: @kind, name: "another-name"}]}
+      another_entity = %Entity{key: another_key, properties: %{@property_name => %Value{stringValue: "another value"}}}
+      keys = [@key, another_key]
+      entities = [@entity, another_entity]
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_lookup, fn _, _, _ ->
+        {:ok, %LookupResponse{found: entities}}
+      end)
+
+      assert Datastore.find_all!(@conn, keys) == %{found: Enum.map(entities, &DsWrapper.Entity.to_map/1), missing: nil, deferred: nil}
+    end
+
+    test "raises an exception when find_all/2 returns {:error, reason}" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_lookup, fn _, _, _ ->
+        {:error, "some error"}
+      end)
+
+      assert_raise RuntimeError, fn -> Datastore.find_all!(@conn, [@key]) end
+    end
+  end
+
   describe "insert/2" do
     test "call datastore_projects_commit" do
       GoogleApiProjectsMock
@@ -234,6 +308,35 @@ defmodule DsWrapper.DatastoreTest do
 
       Datastore.insert(tx_conn, [@entity, another_entity])
       assert DsWrapper.MutationStore.get_all(tx_conn.mutation_store_pid) == [%Mutation{insert: @entity}, %Mutation{insert: another_entity}]
+    end
+  end
+
+  describe "insert!/2" do
+    test "returns the result when insert/2 returns {:ok, result}" do
+      another_key = %Key{path: [%PathElement{kind: @kind, id: "1234"}]}
+      another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:ok, %CommitResponse{mutationResults: [%MutationResult{key: nil}, %MutationResult{key: another_key}]}}
+      end)
+
+      assert Datastore.insert!(@conn, [@entity, another_entity]) == [@key, another_key]
+    end
+
+    test "raises an exception when insert/2 returns {:error, reason}" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:error, "some error"}
+      end)
+
+      assert_raise RuntimeError, fn -> Datastore.insert!(@conn, [@entity]) end
+    end
+
+    test "returns nil when transaction mode", %{tx_conn: tx_conn} do
+      another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
+
+      assert Datastore.insert!(tx_conn, [@entity, another_entity]) == nil
     end
   end
 
@@ -285,6 +388,35 @@ defmodule DsWrapper.DatastoreTest do
     end
   end
 
+  describe "upsert!/2" do
+    test "returns the result when upsert/2 returns {:ok, result}" do
+      another_key = %Key{path: [%PathElement{kind: @kind, id: "1234"}]}
+      another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:ok, %CommitResponse{mutationResults: [%MutationResult{key: nil}, %MutationResult{key: another_key}]}}
+      end)
+
+      assert Datastore.upsert!(@conn, [@entity, another_entity]) == [@key, another_key]
+    end
+
+    test "raises an exception when upsert/2 returns {:error, reason}" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:error, "some error"}
+      end)
+
+      assert_raise RuntimeError, fn -> Datastore.upsert!(@conn, [@entity]) end
+    end
+
+    test "returns nil when transaction mode", %{tx_conn: tx_conn} do
+      another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
+
+      assert Datastore.upsert!(tx_conn, [@entity, another_entity]) == nil
+    end
+  end
+
   describe "update/2" do
     test "call datastore_projects_commit" do
       GoogleApiProjectsMock
@@ -333,6 +465,35 @@ defmodule DsWrapper.DatastoreTest do
     end
   end
 
+  describe "update!/2" do
+    test "returns the result when update/2 returns {:ok, result}" do
+      another_key = %Key{path: [%PathElement{kind: @kind, id: "1234"}]}
+      another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
+
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:ok, %CommitResponse{mutationResults: [%MutationResult{key: nil}, %MutationResult{key: another_key}]}}
+      end)
+
+      assert Datastore.update!(@conn, [@entity, another_entity]) == [@key, another_key]
+    end
+
+    test "raises an exception when update/2 returns {:error, reason}" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:error, "some error"}
+      end)
+
+      assert_raise RuntimeError, fn -> Datastore.update!(@conn, [@entity]) end
+    end
+
+    test "returns nil when transaction mode", %{tx_conn: tx_conn} do
+      another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
+
+      assert Datastore.update!(tx_conn, [@entity, another_entity]) == nil
+    end
+  end
+
   describe "delete/2" do
     test "call datastore_projects_commit" do
       GoogleApiProjectsMock
@@ -373,6 +534,32 @@ defmodule DsWrapper.DatastoreTest do
     test "add mutations to MutationStore when transaction mode", %{tx_conn: tx_conn} do
       Datastore.delete(tx_conn, @key)
       assert DsWrapper.MutationStore.get_all(tx_conn.mutation_store_pid) == [%Mutation{delete: @key}]
+    end
+  end
+
+  describe "delete!/2" do
+    test "returns the result when delete/2 returns {:ok, result}" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:ok, %CommitResponse{mutationResults: [%MutationResult{key: nil}]}}
+      end)
+
+      assert Datastore.delete!(@conn, @key) == :ok
+    end
+
+    test "raises an exception when delete/2 returns {:error, reason}" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:error, "some error"}
+      end)
+
+      assert_raise RuntimeError, fn -> Datastore.delete!(@conn, [@entity]) end
+    end
+
+    test "returns :ok when transaction mode", %{tx_conn: tx_conn} do
+      another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
+
+      assert Datastore.delete!(tx_conn, [@entity, another_entity]) == :ok
     end
   end
 

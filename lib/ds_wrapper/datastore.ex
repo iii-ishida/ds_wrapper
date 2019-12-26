@@ -43,6 +43,16 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
+  retrieve entities specified by a Query. Raises an exception on error.
+  """
+  def run_query!(connection, %Query{} = query) do
+    case run_query(connection, query) do
+      {:ok, result} -> result
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @doc """
   retrieve an entity by key.
 
   ## Examples
@@ -61,6 +71,16 @@ defmodule DsWrapper.Datastore do
         |> DsWrapper.Entity.to_map()
 
       {:ok, entity}
+    end
+  end
+
+  @doc """
+  retrieve an entity by key. Raises an exception on error.
+  """
+  def find!(connection, key) do
+    case find(connection, key) do
+      {:ok, result} -> result
+      {:error, reason} -> raise reason
     end
   end
 
@@ -87,6 +107,17 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
+  retrieve the entities for the provided keys. The order of results is undefined and has no relation to the order of keys arguments.
+  Raises an exception on error.
+  """
+  def find_all!(connection, keys) do
+    case find_all(connection, keys) do
+      {:ok, result} -> result
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @doc """
   insert one or more entities to the Datastore.
 
   ## Examples
@@ -97,6 +128,11 @@ defmodule DsWrapper.Datastore do
       {:ok, [%Key{...}]}
   """
   def insert(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_insert/1, entities)
+
+  @doc """
+  insert one or more entities to the Datastore. Raises an exception on error.
+  """
+  def insert!(connection, entities), do: do_command!(connection, &DsWrapper.Mutation.for_insert/1, entities)
 
   @doc """
   persist one or more entities to the Datastore.
@@ -111,6 +147,11 @@ defmodule DsWrapper.Datastore do
   def upsert(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_upsert/1, entities)
 
   @doc """
+  persist one or more entities to the Datastore. Raises an exception on error.
+  """
+  def upsert!(connection, entities), do: do_command!(connection, &DsWrapper.Mutation.for_upsert/1, entities)
+
+  @doc """
   update one or more entities to the Datastore.
 
   ## Examples
@@ -121,6 +162,11 @@ defmodule DsWrapper.Datastore do
       {:ok, [%Key{...}]}
   """
   def update(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_update/1, entities)
+
+  @doc """
+  update one or more entities to the Datastore. Raises an exception on error.
+  """
+  def update!(connection, entities), do: do_command!(connection, &DsWrapper.Mutation.for_update/1, entities)
 
   @doc """
   remove entities from the Datastore.
@@ -135,6 +181,15 @@ defmodule DsWrapper.Datastore do
   def delete(connection, keys) do
     with {:ok, _} <- do_command(connection, &DsWrapper.Mutation.for_delete/1, keys) do
       :ok
+    end
+  end
+
+  @doc """
+  remove entities from the Datastore. Raises an exception on error.
+  """
+  def delete!(connection, keys) do
+    with {:error, reason} <- delete(connection, keys) do
+      raise reason
     end
   end
 
@@ -214,6 +269,13 @@ defmodule DsWrapper.Datastore do
   defp do_command(%{mutation_store_pid: pid}, create_mutations_function, entities_or_keys) do
     DsWrapper.MutationStore.put(pid, create_mutations_function.(entities_or_keys))
     {:ok, nil}
+  end
+
+  defp do_command!(connection, create_mutations_function, entity_or_key) do
+    case do_command(connection, create_mutations_function, entity_or_key) do
+      {:ok, result} -> result
+      {:error, reason} -> raise reason
+    end
   end
 
   defp commit(%{transaction_id: tx_id} = connection = connection, mutations) when is_nil(tx_id) do
