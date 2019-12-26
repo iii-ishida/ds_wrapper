@@ -19,6 +19,7 @@ defmodule DsWrapper.Key do
       iex> DsWrapper.Key.new("SomeKind", 1234)
       %GoogleApi.Datastore.V1.Model.Key{path: [%GoogleApi.Datastore.V1.Model.PathElement{kind: "SomeKind", id: "1234"}]}
   """
+  @spec new(String.t(), integer | String.t() | nil, %Key{}) :: %Key{}
   def new(kind, id_or_name \\ nil, parent \\ %Key{path: []})
 
   def new(kind, id, parent) when is_integer(id) do

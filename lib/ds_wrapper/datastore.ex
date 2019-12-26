@@ -6,6 +6,9 @@ defmodule DsWrapper.Datastore do
   alias GoogleApi.Datastore.V1.Model.{
     BeginTransactionRequest,
     CommitRequest,
+    CommitResponse,
+    Entity,
+    Key,
     LookupRequest,
     Query,
     ReadOnly,
@@ -15,6 +18,14 @@ defmodule DsWrapper.Datastore do
     RunQueryRequest,
     TransactionOptions
   }
+
+  @type key :: %Key{}
+  @type query_result :: %{cursor: String.t() | nil, entities: list(map)}
+  @type find_all_result :: %{
+          found: list(map) | nil,
+          missing: list(key) | nil,
+          deferred: list(key) | nil
+        }
 
   @google_api_projects Application.get_env(:ds_wrapper, :google_api_projects, GoogleApi.Datastore.V1.Api.Projects)
 
@@ -31,6 +42,7 @@ defmodule DsWrapper.Datastore do
       ...> DsWrapper.Datastore.run_query(connection, query)
       {:ok, %{cursor: ..., entities: [%{...}]}}
   """
+  @spec run_query(DsWrapper.Connection.t(), Query.t()) :: {:ok, query_result} | {:error, term}
   def run_query(connection, %Query{} = query) do
     req = %RunQueryRequest{query: query, readOptions: %ReadOptions{transaction: connection.transaction_id}}
 
@@ -45,6 +57,7 @@ defmodule DsWrapper.Datastore do
   @doc """
   retrieve entities specified by a Query. Raises an exception on error.
   """
+  @spec run_query!(DsWrapper.Connection.t(), Query.t()) :: query_result | no_return
   def run_query!(connection, %Query{} = query) do
     case run_query(connection, query) do
       {:ok, result} -> result
@@ -63,6 +76,7 @@ defmodule DsWrapper.Datastore do
       ...> DsWrapper.Datastore.find(connection, key)
       {:ok, %{...}}
   """
+  @spec find(DsWrapper.Connection.t(), key) :: {:ok, map | nil} | {:error, term}
   def find(connection, key) do
     with {:ok, %{found: found}} <- lookup(connection, [key]) do
       entity =
@@ -77,6 +91,7 @@ defmodule DsWrapper.Datastore do
   @doc """
   retrieve an entity by key. Raises an exception on error.
   """
+  @spec find!(DsWrapper.Connection.t(), key) :: map | nil | no_return
   def find!(connection, key) do
     case find(connection, key) do
       {:ok, result} -> result
@@ -95,6 +110,7 @@ defmodule DsWrapper.Datastore do
       ...> DsWrapper.Datastore.find_all(connection, keys)
       {:ok, %{found: [%{...}, ...], missing: [%Key{...}, ...], deferred: [%Key{...}, ...]}}
   """
+  @spec find_all(DsWrapper.Connection.t(), list(key)) :: {:ok, find_all_result} | {:error, term}
   def find_all(connection, keys) do
     with {:ok, result} <- lookup(connection, keys) do
       {:ok,
@@ -110,6 +126,7 @@ defmodule DsWrapper.Datastore do
   retrieve the entities for the provided keys. The order of results is undefined and has no relation to the order of keys arguments.
   Raises an exception on error.
   """
+  @spec find_all!(DsWrapper.Connection.t(), list(key)) :: find_all_result | no_return
   def find_all!(connection, keys) do
     case find_all(connection, keys) do
       {:ok, result} -> result
@@ -127,11 +144,13 @@ defmodule DsWrapper.Datastore do
       ...> DsWrapper.Datastore.insert(connection, entity)
       {:ok, [%Key{...}]}
   """
+  @spec insert(DsWrapper.Connection.t(), list(Entity.t()) | Entity.t()) :: {:ok, [key] | nil} | {:error, term}
   def insert(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_insert/1, entities)
 
   @doc """
   insert one or more entities to the Datastore. Raises an exception on error.
   """
+  @spec insert!(DsWrapper.Connection.t(), list(Entity.t()) | Entity.t()) :: [key] | nil | no_return
   def insert!(connection, entities), do: do_command!(connection, &DsWrapper.Mutation.for_insert/1, entities)
 
   @doc """
@@ -144,11 +163,13 @@ defmodule DsWrapper.Datastore do
       ...> DsWrapper.Datastore.upsert(connection, entity)
       {:ok, [%Key{...}]}
   """
+  @spec upsert(DsWrapper.Connection.t(), list(Entity.t()) | Entity.t()) :: {:ok, [key] | nil} | {:error, term}
   def upsert(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_upsert/1, entities)
 
   @doc """
   persist one or more entities to the Datastore. Raises an exception on error.
   """
+  @spec upsert!(DsWrapper.Connection.t(), list(Entity.t()) | Entity.t()) :: [key] | nil | no_return
   def upsert!(connection, entities), do: do_command!(connection, &DsWrapper.Mutation.for_upsert/1, entities)
 
   @doc """
@@ -161,11 +182,13 @@ defmodule DsWrapper.Datastore do
       ...> DsWrapper.Datastore.update(connection, entity)
       {:ok, [%Key{...}]}
   """
+  @spec update(DsWrapper.Connection.t(), list(Entity.t()) | Entity.t()) :: {:ok, [key] | nil} | {:error, term}
   def update(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_update/1, entities)
 
   @doc """
   update one or more entities to the Datastore. Raises an exception on error.
   """
+  @spec update!(DsWrapper.Connection.t(), list(Entity.t()) | Entity.t()) :: [key] | nil | no_return
   def update!(connection, entities), do: do_command!(connection, &DsWrapper.Mutation.for_update/1, entities)
 
   @doc """
@@ -178,6 +201,7 @@ defmodule DsWrapper.Datastore do
       ...> DsWrapper.Datastore.delete(connection, key)
       :ok
   """
+  @spec delete(DsWrapper.Connection.t(), list(key) | key) :: :ok | {:error, term}
   def delete(connection, keys) do
     with {:ok, _} <- do_command(connection, &DsWrapper.Mutation.for_delete/1, keys) do
       :ok
@@ -187,6 +211,7 @@ defmodule DsWrapper.Datastore do
   @doc """
   remove entities from the Datastore. Raises an exception on error.
   """
+  @spec delete!(DsWrapper.Connection.t(), list(key) | key) :: :ok | no_return
   def delete!(connection, keys) do
     with {:error, reason} <- delete(connection, keys) do
       raise reason
@@ -202,6 +227,7 @@ defmodule DsWrapper.Datastore do
       ...> DsWrapper.transaction(conn)
       {:ok, %DsWrapper.Connection{connection: ..., project_id: ..., transaction_id: ..., mutation_store_pid: ...}}
   """
+  @spec transaction(DsWrapper.Connection.t(), atom) :: {:ok, DsWrapper.Connection.t()} | {:error, term}
   def transaction(connection, read_only \\ nil) do
     with {:ok, %{transaction: tx_id}} <- begin_transaction(connection, read_only == :read_only),
          {:ok, pid} <- DsWrapper.MutationStore.start_link() do
@@ -222,6 +248,7 @@ defmodule DsWrapper.Datastore do
       ...> end)
       {:ok, ...}
   """
+  @spec run_in_transaction(DsWrapper.Connection.t(), (DsWrapper.Connection.t() -> term)) :: {:ok, term} | {:error, term}
   def run_in_transaction(connection, fun) do
     with {:ok, tx_conn} <- transaction(connection) do
       try do
@@ -248,6 +275,7 @@ defmodule DsWrapper.Datastore do
       ...> DsWrapper.Datastore.commit(tx)
       {:ok, %CommitResponse{...}}
   """
+  @spec commit(DsWrapper.Connection.t()) :: {:ok, CommitResponse.t()} | {:error, term}
   def commit(tx_connection) do
     req = %CommitRequest{
       mode: "TRANSACTIONAL",
@@ -272,12 +300,13 @@ defmodule DsWrapper.Datastore do
       ...> DsWrapper.Datastore.rollback(tx)
       :ok
   """
-  def rollback(connection) do
-    req = %RollbackRequest{transaction: connection.transaction_id}
+  @spec rollback(DsWrapper.Connection.t()) :: :ok | {:error, term}
+  def rollback(tx_connection) do
+    req = %RollbackRequest{transaction: tx_connection.transaction_id}
 
-    DsWrapper.MutationStore.stop(connection.mutation_store_pid)
+    DsWrapper.MutationStore.stop(tx_connection.mutation_store_pid)
 
-    with {:ok, _} <- call_datastore_api(connection, &@google_api_projects.datastore_projects_rollback/3, body: req) do
+    with {:ok, _} <- call_datastore_api(tx_connection, &@google_api_projects.datastore_projects_rollback/3, body: req) do
       :ok
     end
   end

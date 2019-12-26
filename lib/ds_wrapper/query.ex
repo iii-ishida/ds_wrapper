@@ -15,6 +15,8 @@ defmodule DsWrapper.Query do
     Query
   }
 
+  @type query :: %Query{}
+
   @doc """
   new `%GoogleApi.Datastore.V1.Model.Query` for kind
 
@@ -22,8 +24,8 @@ defmodule DsWrapper.Query do
 
       iex> DsWrapper.Query.new_query("SomeKind")
       %GoogleApi.Datastore.V1.Model.Query{...}
-
   """
+  @spec new_query(String.t()) :: %Query{}
   def new_query(kind) do
     %Query{kind: %KindExpression{name: kind}}
   end
@@ -37,8 +39,8 @@ defmodule DsWrapper.Query do
       iex> new_query("SomeKind")
       ...> |> where("some_property", "=", "some value")
       %GoogleApi.Datastore.V1.Model.Query{...}
-
   """
+  @spec where(query, String.t(), String.t(), term) :: query
   def where(%Query{} = query, property, operator, value) do
     current_composite_filter =
       case query.filter do
@@ -70,8 +72,8 @@ defmodule DsWrapper.Query do
       iex> new_query("SomeKind")
       ...> |> order("some_property")
       %GoogleApi.Datastore.V1.Model.Query{...}
-
   """
+  @spec order(query, String.t(), :asc | :desc | nil) :: query
   def order(%Query{} = query, property, direction \\ nil) do
     order = [new_property_order(property, to_direction(direction))]
 
@@ -87,8 +89,8 @@ defmodule DsWrapper.Query do
       iex> new_query("SomeKind")
       ...> |> limit(100)
       %GoogleApi.Datastore.V1.Model.Query{...}
-
   """
+  @spec limit(query, non_neg_integer) :: query
   def limit(%Query{} = query, limit) do
     %Query{query | limit: limit}
   end
@@ -102,8 +104,8 @@ defmodule DsWrapper.Query do
       iex> new_query("SomeKind")
       ...> |> start(cursor)
       %GoogleApi.Datastore.V1.Model.Query{...}
-
   """
+  @spec start(query, String.t()) :: query
   def start(%Query{} = query, cursor) do
     %Query{query | startCursor: cursor}
   end

@@ -7,6 +7,13 @@ defmodule DsWrapper.Connection do
 
   defstruct [:connection, :project_id, :transaction_id, :mutation_store_pid]
 
+  @type t :: %__MODULE__{
+          connection: Tesla.Client.t(),
+          project_id: String.t(),
+          transaction_id: String.t() | nil,
+          mutation_store_pid: pid | nil
+        }
+
   @token Application.get_env(:ds_wrapper, :token_for_connection, Goth.Token)
 
   @doc """
