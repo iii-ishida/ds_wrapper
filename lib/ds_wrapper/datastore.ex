@@ -210,6 +210,33 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
+  Runs the given function inside a transaction.
+  if the given function raises exception, rolled back the transaction.
+
+  ## Examples
+
+      iex> {:ok, connection} = DsWrapper.Connection.new("project-id")
+      ...> DsWrapper.run_in_transaction(conn, fn tx ->
+      ...>   Datastore.insert!(tx, entity)
+      ...>   Datastore.update!(tx, another_entity)
+      ...> end)
+      {:ok, ...}
+  """
+  def run_in_transaction(connection, fun) do
+    with {:ok, tx_conn} <- transaction(connection) do
+      try do
+        result = fun.(tx_conn)
+        commit(tx_conn)
+        {:ok, result}
+      rescue
+        e ->
+          rollback(tx_conn)
+          {:error, e}
+      end
+    end
+  end
+
+  @doc """
   commit a transaction.
 
   ## Examples

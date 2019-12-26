@@ -595,6 +595,78 @@ defmodule DsWrapper.DatastoreTest do
     end
   end
 
+  describe "run_in_transaction/1" do
+    test "call datastore_projects_begin_transaction" do
+      GoogleApiProjectsMock
+      |> stub(:datastore_projects_commit, fn _, _, _ -> {:ok, nil} end)
+      |> expect(:datastore_projects_begin_transaction, fn _, _, [body: body] ->
+        assert body == %BeginTransactionRequest{transactionOptions: %TransactionOptions{readWrite: %ReadWrite{}}}
+      end)
+
+      Datastore.run_in_transaction(@conn, fn _ -> nil end)
+    end
+
+    test "call datastore_projects_commit when no exception occured" do
+      another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
+
+      GoogleApiProjectsMock
+      |> stub(:datastore_projects_begin_transaction, fn _, _, _ -> {:ok, %BeginTransactionResponse{transaction: "transaction-id"}} end)
+      |> expect(:datastore_projects_commit, fn _, _, [body: body] ->
+        assert body == %CommitRequest{
+                 mode: "TRANSACTIONAL",
+                 transaction: "transaction-id",
+                 mutations: [%Mutation{insert: @entity}, %Mutation{update: another_entity}]
+               }
+
+        {:ok, %CommitResponse{mutationResults: []}}
+      end)
+
+      Datastore.run_in_transaction(@conn, fn tx_conn ->
+        Datastore.insert(tx_conn, @entity)
+        Datastore.update(tx_conn, another_entity)
+      end)
+    end
+
+    test "call datastore_projects_rollback when exception occured" do
+      GoogleApiProjectsMock
+      |> stub(:datastore_projects_begin_transaction, fn _, _, _ -> {:ok, %BeginTransactionResponse{transaction: "transaction-id"}} end)
+      |> expect(:datastore_projects_rollback, fn _, _, [body: body] ->
+        assert body == %RollbackRequest{transaction: "transaction-id"}
+
+        {:ok, %RollbackResponse{}}
+      end)
+
+      Datastore.run_in_transaction(@conn, fn _ ->
+        raise "error"
+      end)
+    end
+
+    test "returns {:ok, result} when no exception occured" do
+      GoogleApiProjectsMock
+      |> stub(:datastore_projects_begin_transaction, fn _, _, _ -> {:ok, %BeginTransactionResponse{transaction: "transaction-id"}} end)
+      |> expect(:datastore_projects_commit, fn _, _, _ ->
+        {:ok, %CommitResponse{mutationResults: []}}
+      end)
+
+      assert Datastore.run_in_transaction(@conn, fn tx_conn ->
+               Datastore.insert(tx_conn, @entity)
+               "result"
+             end) == {:ok, "result"}
+    end
+
+    test "returns {:error, reason} when exception occured" do
+      GoogleApiProjectsMock
+      |> stub(:datastore_projects_begin_transaction, fn _, _, _ -> {:ok, %BeginTransactionResponse{transaction: "transaction-id"}} end)
+      |> expect(:datastore_projects_rollback, fn _, _, _ ->
+        {:ok, %RollbackResponse{}}
+      end)
+
+      assert Datastore.run_in_transaction(@conn, fn _ ->
+               raise RuntimeError, "reason"
+             end) == {:error, %RuntimeError{message: "reason"}}
+    end
+  end
+
   describe "commit/1" do
     test "call datastore_projects_commit", %{tx_conn: tx_conn} do
       another_entity = %Entity{key: %Key{path: [%PathElement{kind: @kind}]}, properties: %{@property_name => %Value{stringValue: "another value"}}}
