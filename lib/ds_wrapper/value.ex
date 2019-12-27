@@ -1,12 +1,12 @@
 defmodule DsWrapper.Value do
   @moduledoc """
-  A wrapper for GoogleApi.Datastore.V1.Model.Value
+  `GoogleApi.Datastore.V1.Model.Value` wrapper
   """
 
   alias GoogleApi.Datastore.V1.Model.{ArrayValue, Entity, Key, LatLng, Value}
 
   @doc """
-  convert to a `GoogleApi.Datastore.V1.Model.Value`
+  Convert to a `GoogleApi.Datastore.V1.Model.Value`.
 
   ## Examples
 
@@ -60,7 +60,7 @@ defmodule DsWrapper.Value do
   end
 
   @doc """
-  convert from a `GoogleApi.Datastore.V1.Model.Value`
+  Convert from a `GoogleApi.Datastore.V1.Model.Value`.
 
   ## Examples
 

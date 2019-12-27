@@ -1,6 +1,6 @@
 defmodule DsWrapper.Connection do
   @moduledoc """
-  a connection for GoogleApi.Datastore.V1.
+  Connection for GoogleApi.Datastore.V1.
   """
 
   alias GoogleApi.Datastore.V1.Connection
@@ -17,14 +17,14 @@ defmodule DsWrapper.Connection do
   @token Application.get_env(:ds_wrapper, :token_for_connection, Goth.Token)
 
   @doc """
-  configure a client connection.
+  Configure a client connection.
   """
   def new(token, project_id) do
     %__MODULE__{connection: Connection.new(token), project_id: project_id}
   end
 
   @doc """
-  configure a client connection.
+  Configure a client connection.
   """
   def new(project_id) do
     case @token.for_scope("https://www.googleapis.com/auth/datastore") do
@@ -34,9 +34,8 @@ defmodule DsWrapper.Connection do
   end
 
   @doc """
-  configure a client connection.
-
-  use GOOGLE_CLOUD_PROJECT as the project_id
+  Configure a client connection.
+  use GOOGLE_CLOUD_PROJECT as the project_id.
   """
   def new, do: new(System.get_env("GOOGLE_CLOUD_PROJECT"))
 end

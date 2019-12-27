@@ -1,12 +1,12 @@
 defmodule DsWrapper.Mutation do
   @moduledoc """
-  a wrapper for `GoogleApi.Datastore.V1.Model.Mutation`
+  `GoogleApi.Datastore.V1.Model.Mutation` wrapper
   """
 
   alias GoogleApi.Datastore.V1.Model.Mutation
 
   @doc """
-  new `GoogleApi.Datastore.V1.Model.Mutation` for insert
+  Create new `GoogleApi.Datastore.V1.Model.Mutation`s for insert.
 
   ## Examples
       iex> DsWrapper.Mutation.for_insert(DsWrapper.Entity.new(...))
@@ -21,7 +21,7 @@ defmodule DsWrapper.Mutation do
   end
 
   @doc """
-  new `GoogleApi.Datastore.V1.Model.Mutation` for upsert
+  Create new `GoogleApi.Datastore.V1.Model.Mutation`s for upsert.
 
   ## Examples
       iex> DsWrapper.Mutation.for_upsert(DsWrapper.Entity.new(...))
@@ -36,7 +36,7 @@ defmodule DsWrapper.Mutation do
   end
 
   @doc """
-  new `GoogleApi.Datastore.V1.Model.Mutation` for update
+  Create new `GoogleApi.Datastore.V1.Model.Mutation`s for update.
 
   ## Examples
       iex> DsWrapper.Mutation.for_update(DsWrapper.Entity.new(...))
@@ -51,7 +51,7 @@ defmodule DsWrapper.Mutation do
   end
 
   @doc """
-  new `GoogleApi.Datastore.V1.Model.Mutation` for delete
+  Create new `GoogleApi.Datastore.V1.Model.Mutation`s for delete.
 
   ## Examples
       iex> DsWrapper.Mutation.for_delete(DsWrapper.Key.new(...))

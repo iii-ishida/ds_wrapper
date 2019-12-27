@@ -1,12 +1,12 @@
 defmodule DsWrapper.Key do
   @moduledoc """
-  A wrapper for `GoogleApi.Datastore.V1.Model.Key`
+  `GoogleApi.Datastore.V1.Model.Key` wrapper
   """
 
   alias GoogleApi.Datastore.V1.Model.{Key, PathElement}
 
   @doc """
-  new `GoogleApi.Datastore.V1.Model.Key`
+  Create a new `GoogleApi.Datastore.V1.Model.Key`.
 
   ## Examples
 

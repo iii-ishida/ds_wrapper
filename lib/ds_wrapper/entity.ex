@@ -1,13 +1,13 @@
 defmodule DsWrapper.Entity do
   @moduledoc """
-  A wrapper for GoogleApi.Datastore.V1.Model.Entity
+  `GoogleApi.Datastore.V1.Model.Entity` wrapper
   """
 
   alias DsWrapper.Value
   alias GoogleApi.Datastore.V1.Model.{Entity, EntityResult, Key}
 
   @doc """
-  new `GoogleApi.Datastore.V1.Model.Entity`
+  Create a new `GoogleApi.Datastore.V1.Model.Entity`.
 
   ## Examples
 
@@ -29,7 +29,7 @@ defmodule DsWrapper.Entity do
   end
 
   @doc """
-  convert `GoogleApi.Datastore.V1.Model.Entity`'s properties to a Map
+  Convert `GoogleApi.Datastore.V1.Model.Entity`'s properties to a Map.
 
   ## Examples
 

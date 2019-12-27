@@ -1,6 +1,6 @@
 defmodule DsWrapper.Query do
   @moduledoc """
-  A wrapper for GoogleApi.Datastore.V1.Model.Query
+  `GoogleApi.Datastore.V1.Model.Query` wrapper
   """
 
   alias DsWrapper.Value
@@ -18,7 +18,7 @@ defmodule DsWrapper.Query do
   @type query :: %Query{}
 
   @doc """
-  new `%GoogleApi.Datastore.V1.Model.Query` for kind
+  Create a new `%GoogleApi.Datastore.V1.Model.Query` for kind.
 
   ## Examples
 
@@ -31,7 +31,7 @@ defmodule DsWrapper.Query do
   end
 
   @doc """
-  add a property filter to the query
+  Add a property filter to the query.
 
   ## Examples
 
@@ -63,8 +63,8 @@ defmodule DsWrapper.Query do
   end
 
   @doc """
-  sort the results by a property name. By default, an ascending sort order will be used.
-  to sort in descending order, provide a second argument to `:desc`.
+  Sort the results by a property name. By default, an ascending sort order will be used.
+  To sort in descending order, provide a second argument to `:desc`.
 
   ## Examples
 
@@ -81,7 +81,7 @@ defmodule DsWrapper.Query do
   end
 
   @doc """
-  set a limit on the number of results to be returned.
+  Set a limit on the number of results to be returned.
 
   ## Examples
 
@@ -96,7 +96,7 @@ defmodule DsWrapper.Query do
   end
 
   @doc """
-  set the cursor to start the results at.
+  Set the cursor to start the results at.
 
   ## Examples
 

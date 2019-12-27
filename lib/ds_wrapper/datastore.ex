@@ -1,6 +1,6 @@
 defmodule DsWrapper.Datastore do
   @moduledoc """
-  utility for GoogleApi.Datastore.V1.Api.Projects
+  `GoogleApi.Datastore.V1.Api.Projects` utility
   """
 
   alias GoogleApi.Datastore.V1.Model.{
@@ -32,7 +32,7 @@ defmodule DsWrapper.Datastore do
   defdelegate query(kind), to: DsWrapper.Query, as: :new_query
 
   @doc """
-  retrieve entities specified by a Query.
+  Retrieve entities specified by a Query.
 
   ## Examples
 
@@ -55,7 +55,7 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
-  retrieve entities specified by a Query. Raises an exception on error.
+  Retrieve entities specified by a Query. Raises an exception on error.
   """
   @spec run_query!(DsWrapper.Connection.t(), Query.t()) :: query_result | no_return
   def run_query!(connection, %Query{} = query) do
@@ -66,7 +66,7 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
-  retrieve an entity by key.
+  Retrieve an entity by key.
 
   ## Examples
 
@@ -89,7 +89,7 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
-  retrieve an entity by key. Raises an exception on error.
+  Retrieve an entity by key. Raises an exception on error.
   """
   @spec find!(DsWrapper.Connection.t(), key) :: map | nil | no_return
   def find!(connection, key) do
@@ -100,7 +100,7 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
-  retrieve the entities for the provided keys. The order of results is undefined and has no relation to the order of keys arguments.
+  Retrieve the entities for the provided keys. The order of results is undefined and has no relation to the order of keys arguments.
 
   ## Examples
 
@@ -123,7 +123,7 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
-  retrieve the entities for the provided keys. The order of results is undefined and has no relation to the order of keys arguments.
+  Retrieve the entities for the provided keys. The order of results is undefined and has no relation to the order of keys arguments.
   Raises an exception on error.
   """
   @spec find_all!(DsWrapper.Connection.t(), list(key)) :: find_all_result | no_return
@@ -135,7 +135,7 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
-  insert one or more entities to the Datastore.
+  Insert one or more entities to the Datastore.
 
   ## Examples
 
@@ -148,13 +148,13 @@ defmodule DsWrapper.Datastore do
   def insert(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_insert/1, entities)
 
   @doc """
-  insert one or more entities to the Datastore. Raises an exception on error.
+  Insert one or more entities to the Datastore. Raises an exception on error.
   """
   @spec insert!(DsWrapper.Connection.t(), list(Entity.t()) | Entity.t()) :: [key] | nil | no_return
   def insert!(connection, entities), do: do_command!(connection, &DsWrapper.Mutation.for_insert/1, entities)
 
   @doc """
-  persist one or more entities to the Datastore.
+  Persist one or more entities to the Datastore.
 
   ## Examples
 
@@ -167,13 +167,13 @@ defmodule DsWrapper.Datastore do
   def upsert(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_upsert/1, entities)
 
   @doc """
-  persist one or more entities to the Datastore. Raises an exception on error.
+  Persist one or more entities to the Datastore. Raises an exception on error.
   """
   @spec upsert!(DsWrapper.Connection.t(), list(Entity.t()) | Entity.t()) :: [key] | nil | no_return
   def upsert!(connection, entities), do: do_command!(connection, &DsWrapper.Mutation.for_upsert/1, entities)
 
   @doc """
-  update one or more entities to the Datastore.
+  Update one or more entities to the Datastore.
 
   ## Examples
 
@@ -186,13 +186,13 @@ defmodule DsWrapper.Datastore do
   def update(connection, entities), do: do_command(connection, &DsWrapper.Mutation.for_update/1, entities)
 
   @doc """
-  update one or more entities to the Datastore. Raises an exception on error.
+  Update one or more entities to the Datastore. Raises an exception on error.
   """
   @spec update!(DsWrapper.Connection.t(), list(Entity.t()) | Entity.t()) :: [key] | nil | no_return
   def update!(connection, entities), do: do_command!(connection, &DsWrapper.Mutation.for_update/1, entities)
 
   @doc """
-  remove entities from the Datastore.
+  Remove entities from the Datastore.
 
   ## Examples
 
@@ -209,7 +209,7 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
-  remove entities from the Datastore. Raises an exception on error.
+  Remove entities from the Datastore. Raises an exception on error.
   """
   @spec delete!(DsWrapper.Connection.t(), list(key) | key) :: :ok | no_return
   def delete!(connection, keys) do
@@ -219,7 +219,7 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
-  creates a Datastore Transaction.
+  Creates a Datastore Transaction.
 
   ## Examples
 
@@ -239,7 +239,7 @@ defmodule DsWrapper.Datastore do
 
   @doc """
   Runs the given function inside a transaction.
-  if the given function raises exception, rolled back the transaction.
+  If the given function raises exception, rolled back the transaction.
 
   ## Examples
 
@@ -266,7 +266,7 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
-  commit a transaction.
+  Commit a transaction.
 
   ## Examples
 
@@ -291,7 +291,7 @@ defmodule DsWrapper.Datastore do
   end
 
   @doc """
-  rolls a transaction back.
+  Rolls a transaction back.
 
   ## Examples
 
