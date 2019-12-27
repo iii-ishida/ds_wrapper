@@ -573,13 +573,22 @@ defmodule DsWrapper.DatastoreTest do
       Datastore.transaction(@conn)
     end
 
+    test "call datastore_projects_begin_transaction with previousTransaction option when pass previous_transaction" do
+      GoogleApiProjectsMock
+      |> expect(:datastore_projects_begin_transaction, fn _, _, [body: body] ->
+        assert body == %BeginTransactionRequest{transactionOptions: %TransactionOptions{readWrite: %ReadWrite{previousTransaction: "prev-transaction-id"}}}
+      end)
+
+      Datastore.transaction(@conn, previous_transaction: "prev-transaction-id")
+    end
+
     test "call datastore_projects_begin_transaction with readOnly option when pass :read_only" do
       GoogleApiProjectsMock
       |> expect(:datastore_projects_begin_transaction, fn _, _, [body: body] ->
         assert body == %BeginTransactionRequest{transactionOptions: %TransactionOptions{readOnly: %ReadOnly{}}}
       end)
 
-      Datastore.transaction(@conn, :read_only)
+      Datastore.transaction(@conn, read_only: true)
     end
 
     test "returns connection with transaction_id and mutation_store_pid" do

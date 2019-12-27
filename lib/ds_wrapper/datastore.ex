@@ -227,9 +227,11 @@ defmodule DsWrapper.Datastore do
       ...> DsWrapper.transaction(conn)
       {:ok, %DsWrapper.Connection{connection: ..., project_id: ..., transaction_id: ..., mutation_store_pid: ...}}
   """
-  @spec transaction(DsWrapper.Connection.t(), atom) :: {:ok, DsWrapper.Connection.t()} | {:error, term}
-  def transaction(connection, read_only \\ nil) do
-    with {:ok, %{transaction: tx_id}} <- begin_transaction(connection, read_only == :read_only),
+  @spec transaction(DsWrapper.Connection.t(), read_only: boolean | nil, previous_transaction: String.t() | nil) :: {:ok, DsWrapper.Connection.t()} | {:error, term}
+  def transaction(connection, opts \\ [read_only: nil, previous_transaction: nil])
+
+  def transaction(connection, opts) do
+    with {:ok, %{transaction: tx_id}} <- begin_transaction(connection, opts[:read_only], opts[:previous_transaction]),
          {:ok, pid} <- DsWrapper.MutationStore.start_link() do
       {:ok, %DsWrapper.Connection{connection | transaction_id: tx_id, mutation_store_pid: pid}}
     end
@@ -349,12 +351,12 @@ defmodule DsWrapper.Datastore do
     |> Enum.map(fn {result, i} -> result.key || Enum.at(entities_for_default, i) |> Map.get(:key) end)
   end
 
-  defp begin_transaction(connection, read_only?) do
+  defp begin_transaction(connection, read_only?, previous_transaction) do
     options =
       if read_only? do
         %TransactionOptions{readOnly: %ReadOnly{}}
       else
-        %TransactionOptions{readWrite: %ReadWrite{}}
+        %TransactionOptions{readWrite: %ReadWrite{previousTransaction: previous_transaction}}
       end
 
     req = %BeginTransactionRequest{
