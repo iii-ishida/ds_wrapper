@@ -10,6 +10,7 @@ defmodule DsWrapper.MixProject do
       description: @description,
       elixir: "~> 1.9",
       deps: deps(),
+      build_embedded: Mix.env() == :prod,
       package: package(),
       source_url: "https://github.com/iii-ishida/ds_wrapper",
       dialyzer: [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}],
@@ -42,6 +43,7 @@ defmodule DsWrapper.MixProject do
 
   defp package do
     %{
+      files: ["lib", "mix.exs", "README*", "LICENSE"],
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/iii-ishida/ds_wrapper"}
     }
