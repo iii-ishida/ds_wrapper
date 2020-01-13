@@ -1,7 +1,7 @@
 defmodule DsWrapper.EntityTest do
   use ExUnit.Case, async: true
 
-  alias GoogleApi.Datastore.V1.Model.{Entity, EntityResult, Key, PathElement, Value}
+  alias GoogleApi.Datastore.V1.Model.{Entity, Key, PathElement, Value}
 
   @key %Key{path: [%PathElement{kind: "SomeKind", name: "some-name"}]}
 
@@ -36,15 +36,6 @@ defmodule DsWrapper.EntityTest do
   describe "to_map/1" do
     test "with an nil" do
       assert DsWrapper.Entity.to_map(nil) == nil
-    end
-
-    test "with an EntityResult" do
-      entity = %Entity{
-        key: @key,
-        properties: %{"some_property" => %Value{stringValue: "some value"}}
-      }
-
-      assert DsWrapper.Entity.to_map(%EntityResult{entity: entity}) == %{"some_property" => "some value"}
     end
 
     test "with an Entity" do

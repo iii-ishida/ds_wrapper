@@ -85,8 +85,8 @@ defmodule DsWrapper.DatastoreTest do
          }}
       end)
 
-      entities = [DsWrapper.Entity.to_map(@entity)]
-      assert Datastore.run_query(@conn, query) == {:ok, %{cursor: "end-cursor", entities: entities}}
+      entity = %{@property_name => @property_value}
+      assert Datastore.run_query(@conn, query) == {:ok, %{cursor: "end-cursor", entities: [%{cursor: "end-cursor", entity: entity}]}}
     end
   end
 
@@ -103,8 +103,8 @@ defmodule DsWrapper.DatastoreTest do
          }}
       end)
 
-      entities = [DsWrapper.Entity.to_map(@entity)]
-      assert Datastore.run_query!(@conn, query) == %{cursor: "end-cursor", entities: entities}
+      entity = %{@property_name => @property_value}
+      assert Datastore.run_query!(@conn, query) == %{cursor: "end-cursor", entities: [%{cursor: "end-cursor", entity: entity}]}
     end
 
     test "raises an exception when run_query/1 returns {:error, reason}" do
@@ -148,7 +148,7 @@ defmodule DsWrapper.DatastoreTest do
         {:ok, %LookupResponse{found: [@entity]}}
       end)
 
-      assert Datastore.find(@conn, @key) == {:ok, DsWrapper.Entity.to_map(@entity)}
+      assert Datastore.find(@conn, @key) == {:ok, %{@property_name => @property_value}}
     end
 
     test "when not found" do

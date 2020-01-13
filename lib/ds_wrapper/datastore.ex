@@ -20,7 +20,7 @@ defmodule DsWrapper.Datastore do
   }
 
   @type key :: %Key{}
-  @type query_result :: %{cursor: String.t() | nil, entities: list(map)}
+  @type query_result :: %{cursor: String.t() | nil, entities: list(%{entity: map, cursor: String.t() | nil})}
   @type find_all_result :: %{
           found: list(map) | nil,
           missing: list(key) | nil,
@@ -40,7 +40,7 @@ defmodule DsWrapper.Datastore do
       ...> {:ok, connection} = DsWrapper.Connection.new("project-id")
       ...> query = new_query("SomeKind") |> where("some_property", "=", "some value")
       ...> DsWrapper.Datastore.run_query(connection, query)
-      {:ok, %{cursor: ..., entities: [%{...}]}}
+      {:ok, %{cursor: ..., entities: [%{enity: %{...}, cursor: ...}]}}
   """
   @spec run_query(DsWrapper.Connection.t(), Query.t()) :: {:ok, query_result} | {:error, term}
   def run_query(connection, %Query{} = query) do
@@ -49,7 +49,7 @@ defmodule DsWrapper.Datastore do
     with {:ok, result} <- call_datastore_api(connection, &@google_api_projects.datastore_projects_run_query/3, body: req) do
       cursor = result.batch.endCursor
       entity_results = result.batch.entityResults || []
-      entities = Enum.map(entity_results, &DsWrapper.Entity.to_map/1)
+      entities = Enum.map(entity_results, fn %{entity: entity, cursor: cursor} -> %{entity: DsWrapper.Entity.to_map(entity), cursor: cursor} end)
       {:ok, %{cursor: cursor, entities: entities}}
     end
   end

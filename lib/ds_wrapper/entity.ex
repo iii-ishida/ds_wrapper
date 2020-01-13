@@ -4,7 +4,7 @@ defmodule DsWrapper.Entity do
   """
 
   alias DsWrapper.Value
-  alias GoogleApi.Datastore.V1.Model.{Entity, EntityResult, Key}
+  alias GoogleApi.Datastore.V1.Model.{Entity, Key}
 
   @doc """
   Create a new `GoogleApi.Datastore.V1.Model.Entity`.
@@ -36,9 +36,8 @@ defmodule DsWrapper.Entity do
       iex> DsWrapper.Entity.to_map(entity)
       %{"some_property" => "some value"}
   """
-  @spec to_map(nil | EntityResult.t() | Entity.t()) :: %{required(String.t()) => term}
+  @spec to_map(nil | Entity.t()) :: %{required(String.t()) => term}
   def to_map(nil), do: nil
-  def to_map(%EntityResult{entity: entity}), do: to_map(entity)
 
   def to_map(%Entity{properties: properties}) do
     Enum.reduce(properties, %{}, fn {key, value}, acc ->
