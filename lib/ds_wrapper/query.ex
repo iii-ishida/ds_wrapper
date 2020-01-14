@@ -9,6 +9,7 @@ defmodule DsWrapper.Query do
     CompositeFilter,
     Filter,
     KindExpression,
+    Projection,
     PropertyFilter,
     PropertyOrder,
     PropertyReference,
@@ -60,6 +61,38 @@ defmodule DsWrapper.Query do
     new_composite_filter = %CompositeFilter{current_composite_filter | filters: new_filters}
 
     %Query{query | filter: %Filter{compositeFilter: new_composite_filter}}
+  end
+
+  @doc """
+  Retrieve only select properties from the matched entities.
+
+  ## Examples
+
+      iex> import DsWrapper.Query
+      iex> new_query("SomeKind")
+      ...> |> select(["some_property", ...])
+      %GoogleApi.Datastore.V1.Model.Query{...}
+  """
+  @spec select(query, list(String.t())) :: query
+  def select(%Query{} = query, property_names) do
+    projection_properties = Enum.map(property_names, &%Projection{property: %PropertyReference{name: &1}})
+    %Query{query | projection: projection_properties}
+  end
+
+  @doc """
+  Group results by a list of properties.
+
+  ## Examples
+
+      iex> import DsWrapper.Query
+      iex> new_query("SomeKind")
+      ...> |> group_by(["some_property", ...])
+      %GoogleApi.Datastore.V1.Model.Query{...}
+  """
+  @spec group_by(query, list(String.t())) :: query
+  def group_by(%Query{} = query, property_names) do
+    distinct_properties = Enum.map(property_names, &%PropertyReference{name: &1})
+    %Query{query | distinctOn: distinct_properties}
   end
 
   @doc """

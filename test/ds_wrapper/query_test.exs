@@ -5,6 +5,7 @@ defmodule DsWrapper.QueryTest do
     CompositeFilter,
     Filter,
     KindExpression,
+    Projection,
     PropertyFilter,
     PropertyOrder,
     PropertyReference,
@@ -112,6 +113,26 @@ defmodule DsWrapper.QueryTest do
         value: %Value{stringValue: "some value"}
       })
     end
+  end
+
+  test "select/2" do
+    assert DsWrapper.Query.select(@query, ["some_property_01", "some_property_02"]) == %Query{
+             kind: %KindExpression{name: "SomeKind"},
+             projection: [
+               %Projection{property: %PropertyReference{name: "some_property_01"}},
+               %Projection{property: %PropertyReference{name: "some_property_02"}}
+             ]
+           }
+  end
+
+  test "group_by/2" do
+    assert DsWrapper.Query.group_by(@query, ["some_property_01", "some_property_02"]) == %Query{
+             kind: %KindExpression{name: "SomeKind"},
+             distinctOn: [
+               %PropertyReference{name: "some_property_01"},
+               %PropertyReference{name: "some_property_02"}
+             ]
+           }
   end
 
   describe "order/3" do
