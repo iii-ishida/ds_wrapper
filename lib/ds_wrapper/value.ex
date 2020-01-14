@@ -5,6 +5,8 @@ defmodule DsWrapper.Value do
 
   alias GoogleApi.Datastore.V1.Model.{ArrayValue, Entity, Key, LatLng, Value}
 
+  @meta_filds [:excludeFromIndexes, :meaning]
+
   @doc """
   Convert to a `GoogleApi.Datastore.V1.Model.Value`.
 
@@ -86,11 +88,11 @@ defmodule DsWrapper.Value do
   end
 
   def to_native(%Value{} = value) do
-    not_nil_value =
+    found =
       Map.from_struct(value)
-      |> Enum.find(fn {k, v} -> k != :excludeFromIndexes && v != nil end)
+      |> Enum.find(fn {k, v} -> k not in @meta_filds && v != nil end)
 
-    case not_nil_value do
+    case found do
       {_, v} -> v
       _ -> nil
     end

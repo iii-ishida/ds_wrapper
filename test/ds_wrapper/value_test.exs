@@ -97,6 +97,10 @@ defmodule DsWrapper.ValueTest do
       assert DsWrapper.Value.to_native(%Value{arrayValue: %ArrayValue{values: [%Value{integerValue: "123"}, %Value{stringValue: "some string"}]}}) == [123, "some string"]
     end
 
+    test "meaning is not nil" do
+      assert DsWrapper.Value.to_native(%Value{stringValue: "some value", meaning: 10}) == "some value"
+    end
+
     test "excludeFromIndexes is true" do
       assert DsWrapper.Value.to_native(%Value{stringValue: "some value", excludeFromIndexes: true}) == "some value"
     end
