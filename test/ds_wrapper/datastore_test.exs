@@ -86,7 +86,7 @@ defmodule DsWrapper.DatastoreTest do
       end)
 
       entity = %{@property_name => @property_value}
-      assert Datastore.run_query(@conn, query) == {:ok, %{cursor: "end-cursor", entities: [%{cursor: "end-cursor", entity: entity}]}}
+      assert Datastore.run_query(@conn, query) == {:ok, %{cursor: "end-cursor", results: [%{cursor: "end-cursor", entity: entity}]}}
     end
   end
 
@@ -104,7 +104,7 @@ defmodule DsWrapper.DatastoreTest do
       end)
 
       entity = %{@property_name => @property_value}
-      assert Datastore.run_query!(@conn, query) == %{cursor: "end-cursor", entities: [%{cursor: "end-cursor", entity: entity}]}
+      assert Datastore.run_query!(@conn, query) == %{cursor: "end-cursor", results: [%{cursor: "end-cursor", entity: entity}]}
     end
 
     test "raises an exception when run_query/1 returns {:error, reason}" do

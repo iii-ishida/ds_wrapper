@@ -20,7 +20,7 @@ defmodule DsWrapper.Datastore do
   }
 
   @type key :: %Key{}
-  @type query_result :: %{cursor: String.t() | nil, entities: list(%{entity: map, cursor: String.t() | nil})}
+  @type query_result :: %{cursor: String.t() | nil, results: list(%{entity: map, cursor: String.t() | nil})}
   @type find_all_result :: %{
           found: list(map) | nil,
           missing: list(key) | nil,
@@ -50,7 +50,7 @@ defmodule DsWrapper.Datastore do
       cursor = result.batch.endCursor
       entity_results = result.batch.entityResults || []
       entities = Enum.map(entity_results, fn %{entity: entity, cursor: cursor} -> %{entity: DsWrapper.Entity.to_map(entity), cursor: cursor} end)
-      {:ok, %{cursor: cursor, entities: entities}}
+      {:ok, %{cursor: cursor, results: entities}}
     end
   end
 
