@@ -145,7 +145,7 @@ defmodule DsWrapper.DatastoreTest do
     test "when found" do
       GoogleApiProjectsMock
       |> expect(:datastore_projects_lookup, fn _, _, _ ->
-        {:ok, %LookupResponse{found: [@entity]}}
+        {:ok, %LookupResponse{found: [%EntityResult{entity: @entity}]}}
       end)
 
       assert Datastore.find(@conn, @key) == {:ok, %{@property_name => @property_value}}
@@ -165,10 +165,10 @@ defmodule DsWrapper.DatastoreTest do
     test "returns the result when find/2 returns {:ok, result}" do
       GoogleApiProjectsMock
       |> expect(:datastore_projects_lookup, fn _, _, _ ->
-        {:ok, %LookupResponse{found: [@entity]}}
+        {:ok, %LookupResponse{found: [%EntityResult{entity: @entity}]}}
       end)
 
-      assert Datastore.find!(@conn, @key) == DsWrapper.Entity.to_map(@entity)
+      assert Datastore.find!(@conn, @key) == %{@property_name => @property_value}
     end
 
     test "raises an exception when find/2 returns {:error, reason}" do
@@ -214,14 +214,14 @@ defmodule DsWrapper.DatastoreTest do
       another_key = %Key{path: [%PathElement{kind: @kind, name: "another-name"}]}
       another_entity = %Entity{key: another_key, properties: %{@property_name => %Value{stringValue: "another value"}}}
       keys = [@key, another_key]
-      entities = [@entity, another_entity]
 
       GoogleApiProjectsMock
       |> expect(:datastore_projects_lookup, fn _, _, _ ->
-        {:ok, %LookupResponse{found: entities}}
+        {:ok, %LookupResponse{found: [%EntityResult{entity: @entity}, %EntityResult{entity: another_entity}]}}
       end)
 
-      assert Datastore.find_all(@conn, keys) == {:ok, %{found: Enum.map(entities, &DsWrapper.Entity.to_map/1), missing: nil, deferred: nil}}
+      found = [%{@property_name => @property_value}, %{@property_name => "another value"}]
+      assert Datastore.find_all(@conn, keys) == {:ok, %{found: found, missing: nil, deferred: nil}}
     end
 
     test "when not found" do
@@ -243,14 +243,14 @@ defmodule DsWrapper.DatastoreTest do
       another_key = %Key{path: [%PathElement{kind: @kind, name: "another-name"}]}
       another_entity = %Entity{key: another_key, properties: %{@property_name => %Value{stringValue: "another value"}}}
       keys = [@key, another_key]
-      entities = [@entity, another_entity]
 
       GoogleApiProjectsMock
       |> expect(:datastore_projects_lookup, fn _, _, _ ->
-        {:ok, %LookupResponse{found: entities}}
+        {:ok, %LookupResponse{found: [%EntityResult{entity: @entity}, %EntityResult{entity: another_entity}]}}
       end)
 
-      assert Datastore.find_all!(@conn, keys) == %{found: Enum.map(entities, &DsWrapper.Entity.to_map/1), missing: nil, deferred: nil}
+      found = [%{@property_name => @property_value}, %{@property_name => "another value"}]
+      assert Datastore.find_all!(@conn, keys) == %{found: found, missing: nil, deferred: nil}
     end
 
     test "raises an exception when find_all/2 returns {:error, reason}" do
