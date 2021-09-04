@@ -6,7 +6,7 @@ defmodule DsWrapper.MixProject do
   def project do
     [
       app: :ds_wrapper,
-      version: "0.3.2",
+      version: "0.3.3",
       description: @description,
       elixir: "~> 1.10",
       deps: deps(),
