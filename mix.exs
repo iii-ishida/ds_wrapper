@@ -13,7 +13,8 @@ defmodule DsWrapper.MixProject do
       build_embedded: Mix.env() == :prod,
       package: package(),
       source_url: "https://github.com/iii-ishida/ds_wrapper",
-      elixirc_paths: elixirc_paths(Mix.env())
+      elixirc_paths: elixirc_paths(Mix.env()),
+      dialyzer: [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}]
     ]
   end
 
