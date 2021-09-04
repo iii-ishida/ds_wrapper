@@ -1,5 +1,5 @@
 # DsWrapper
 
-[![Build Status](https://travis-ci.org/iii-ishida/ds_wrapper.svg?branch=master)](https://travis-ci.org/iii-ishida/ds_wrapper)
+[![CI](https://github.com/iii-ishida/ds_wrapper/actions/workflows/main.yml/badge.svg)](https://github.com/iii-ishida/ds_wrapper/actions/workflows/main.yml)
 
 google_api_datastore のラッパー
