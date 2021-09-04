@@ -22,8 +22,6 @@ jobs:
             elixir: 1.11.4
           - otp: 22.3
             elixir: 1.10.4
-          - otp: 22.3
-            elixir: 1.9.4
     steps:
       - uses: actions/checkout@v2
 
@@ -37,7 +35,7 @@ jobs:
         run: mix deps.get
 
       - name: Run tests
-        run: mix format --check-formatted && mix compile --warnings-as-errors && mix test
+        run: mix format --check-formatted && mix credo --strict && mix compile --warnings-as-errors && mix test
 
   dialyzer:
     runs-on: ubuntu-latest

@@ -8,7 +8,7 @@ defmodule DsWrapper.MixProject do
       app: :ds_wrapper,
       version: "0.3.2",
       description: @description,
-      elixir: "~> 1.9",
+      elixir: "~> 1.10",
       deps: deps(),
       build_embedded: Mix.env() == :prod,
       package: package(),
