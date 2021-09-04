@@ -27,7 +27,7 @@ defmodule DsWrapper.Datastore do
           deferred: list(key) | nil
         }
 
-  @google_api_projects Application.get_env(:ds_wrapper, :google_api_projects, GoogleApi.Datastore.V1.Api.Projects)
+  @google_api_projects Application.compile_env(:ds_wrapper, :google_api_projects, GoogleApi.Datastore.V1.Api.Projects)
 
   defdelegate query(kind), to: DsWrapper.Query, as: :new_query
 

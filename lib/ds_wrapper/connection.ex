@@ -14,7 +14,7 @@ defmodule DsWrapper.Connection do
           mutation_store_pid: pid | nil
         }
 
-  @token Application.get_env(:ds_wrapper, :token_for_connection, Goth.Token)
+  @token Application.compile_env(:ds_wrapper, :token_for_connection, Goth.Token)
 
   @doc """
   Configure a client connection.
