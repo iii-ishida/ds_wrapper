@@ -13,7 +13,6 @@ defmodule DsWrapper.MixProject do
       build_embedded: Mix.env() == :prod,
       package: package(),
       source_url: "https://github.com/iii-ishida/ds_wrapper",
-      dialyzer: [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}],
       elixirc_paths: elixirc_paths(Mix.env())
     ]
   end
@@ -28,13 +27,13 @@ defmodule DsWrapper.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:google_api_datastore, "~> 0.13"},
-      {:goth, "~> 1.1.0"},
-      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false},
-      {:credo, "~> 1.1.0", only: [:dev, :test], runtime: false},
+      {:google_api_datastore, "~> 0.18"},
+      {:goth, "~> 1.2.0"},
+      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:earmark, "~> 1.4", only: :dev},
-      {:ex_doc, "~> 0.21", only: :dev},
-      {:mox, "~> 0.5", only: :test}
+      {:ex_doc, "~> 0.25", only: :dev},
+      {:mox, "~> 1.0", only: :test}
     ]
   end
 
